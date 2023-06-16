@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/neonlabsorg/neon-service-framework/pkg/errors"
@@ -67,8 +68,18 @@ func (m *PostgresManager) initConnectionPool(cfg *configuration.PostgresConfigur
 func (m *PostgresManager) GetConnectionPool(db string) (pool *pgxpool.Pool, err error) {
 	pool, ok := m.pools.Get(db)
 	if !ok {
-		return nil, errors.NotFound.New("connection pool not found")
+		return nil, errors.NotFound.Newf("connection pool not found: %s", db)
 	}
 
 	return pool, nil
+}
+
+func (m *PostgresManager) MustGetConnectionPool(db string) (pool *pgxpool.Pool) {
+	pool, ok := m.pools.Get(db)
+	if !ok {
+		panic(fmt.Sprintf("connection pool not found: %s", db))
+
+	}
+
+	return pool
 }
