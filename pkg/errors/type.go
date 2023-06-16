@@ -45,5 +45,5 @@ func (t ErrorType) WrapWithCode(code ErrorCode, err error, msg string) error {
 func (t ErrorType) WrapfWithCode(code ErrorCode, err error, msg string, args ...interface{}) error {
 	newErr := errors.Wrapf(err, msg, args...)
 
-	return Error{errorType: t, originalError: newErr}
+	return Error{code: code, errorType: t, originalError: newErr}
 }
