@@ -67,7 +67,7 @@ func (s *MetricsServer) RunServer() error {
 	go func() {
 		<-s.ctx.Done()
 
-		if err := srv.Shutdown(context.Background()); err != nil {
+		if err := srv.Shutdown(s.ctx); err != nil {
 			logger.Error().Err(err).Msg("could not shutdown server")
 		}
 	}()
