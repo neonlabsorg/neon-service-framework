@@ -11,9 +11,9 @@ import (
 
 type PostgresPoolCollection map[string]*pgxpool.Pool
 
-func (p PostgresPoolCollection) init() {
+func (p *PostgresPoolCollection) init() {
 	if p == nil {
-		p = make(map[string]*pgxpool.Pool)
+		*p = make(map[string]*pgxpool.Pool)
 	}
 }
 

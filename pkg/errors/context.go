@@ -3,7 +3,7 @@ package errors
 type ErrorContext map[string]string
 
 func (c *ErrorContext) init() {
-	c = new(ErrorContext)
+	*c = make(ErrorContext)
 }
 
 func (c ErrorContext) Set(key string, value string) {
