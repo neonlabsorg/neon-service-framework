@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/neonlabsorg/neon-service-framework/pkg/env"
 	"github.com/neonlabsorg/neon-service-framework/pkg/logger"
 	"github.com/neonlabsorg/neon-service-framework/pkg/metrics"
 	"github.com/neonlabsorg/neon-service-framework/pkg/service/configuration"
@@ -40,7 +41,7 @@ func CreateService(
 		panic(err)
 	}
 
-	env := os.Getenv("NEON_SERVICE_ENV")
+	env := env.Get("NEON_SERVICE_ENV")
 	if env == "" {
 		env = "development"
 	}
@@ -76,7 +77,10 @@ func (s *Service) Run() {
 	}
 
 	if s.grpcServer.services.Len() > 0 {
-		s.grpcServer.Run()
+		err = s.grpcServer.Run()
+		if err != nil {
+			s.GetLogger().Error().Msgf("error on running grpc server: ", err)
+		}
 	}
 }
 
@@ -107,7 +111,7 @@ func (s *Service) initGRPCServer(cfg *configuration.GRPCServerConfig) {
 }
 
 func (s *Service) initSolana() {
-	solanaURL := os.Getenv("NS_SOLANA_URL")
+	solanaURL := env.Get("NS_SOLANA_URL")
 	s.solanaRpcClient = rpc.New(solanaURL)
 }
 

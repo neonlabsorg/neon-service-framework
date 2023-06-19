@@ -12,6 +12,7 @@ type DatabaseManager struct {
 	storageConfiguration *configuration.StorageConfiguration
 	logger               logger.Logger
 	postgresManager      *PostgresManager
+	clickhouseManager    *ClickhouseManager
 }
 
 func NewDatabaseManager(
@@ -32,9 +33,19 @@ func NewDatabaseManager(
 		return nil, err
 	}
 
+	manager.clickhouseManager = NewClickhouseManager(ctx, log, storageConfiguration.Clichouse)
+	err = manager.clickhouseManager.InitConnections()
+	if err != nil {
+		return nil, err
+	}
+
 	return manager, nil
 }
 
 func (m *DatabaseManager) GetPostgresManager() *PostgresManager {
 	return m.postgresManager
+}
+
+func (m *DatabaseManager) GetClickhouseManager() *ClickhouseManager {
+	return m.clickhouseManager
 }

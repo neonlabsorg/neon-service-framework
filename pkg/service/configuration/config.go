@@ -8,5 +8,6 @@ type Config struct {
 }
 
 type ConfigStorageList struct {
-	Postgres []string
+	Postgres   []string
+	Clickhouse []string
 }

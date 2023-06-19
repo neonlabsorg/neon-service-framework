@@ -1,27 +1,9 @@
 package configuration
 
-type PostgresConfigCollection map[string]*PostgresConfiguration
-
-func (c PostgresConfigCollection) init() {
-	if c == nil {
-		c = make(map[string]*PostgresConfiguration)
-	}
-}
-
-func (c PostgresConfigCollection) Add(name string, config *PostgresConfiguration) {
-	c.init()
-	c[name] = config
-}
-
-func (c PostgresConfigCollection) Get(name string) (config *PostgresConfiguration, ok bool) {
-	c.init()
-	config, ok = c[name]
-	return config, ok
-}
-
 // DATABASES
 type StorageConfiguration struct {
-	Postgres PostgresConfigCollection
+	Postgres  PostgresConfigCollection
+	Clichouse ClickhouseConfigCollection
 }
 
 func (c *ServiceConfiguration) loadStorageConfigurations(storageList *ConfigStorageList) (err error) {
@@ -30,6 +12,10 @@ func (c *ServiceConfiguration) loadStorageConfigurations(storageList *ConfigStor
 	}
 
 	if err = c.loadPostgresStorageConfigs(storageList.Postgres); err != nil {
+		return err
+	}
+
+	if err = c.loadClickhouseStorageConfigs(storageList.Clickhouse); err != nil {
 		return err
 	}
 
@@ -43,6 +29,18 @@ func (c *ServiceConfiguration) loadPostgresStorageConfigs(list []string) (err er
 			return err
 		}
 		c.Storage.Postgres.Add(db, postgresConfig)
+	}
+
+	return nil
+}
+
+func (c *ServiceConfiguration) loadClickhouseStorageConfigs(list []string) (err error) {
+	for _, db := range list {
+		clickhouseConfig, err := c.loadClickhouseStorageConfig(db)
+		if err != nil {
+			return err
+		}
+		c.Storage.Clichouse.Add(db, clickhouseConfig)
 	}
 
 	return nil
