@@ -101,9 +101,11 @@ func (s *Service) run(cliContext *cli.Context) (err error) {
 		}(handler, &wg)
 	}
 
-	wg.Add(1)
-	go func(s *Service, wGroup *sync.WaitGroup) {
-		if s.cfg.UseGRPCServer {
+	if s.cfg.UseGRPCServer {
+		wg.Add(1)
+		go func(s *Service, wGroup *sync.WaitGroup) {
+			defer wGroup.Done()
+
 			s.GetLogger().Info().Msg("GRPC Server is starting")
 			if s.grpcServer.services.Len() == 0 {
 				s.GetLogger().Error().Msg("grpc server is running with no services")
@@ -111,22 +113,26 @@ func (s *Service) run(cliContext *cli.Context) (err error) {
 			err = s.grpcServer.Run()
 			if err != nil {
 				s.GetLogger().Error().Err(err).Msgf("error on running grpc server")
+			} else {
+				s.loggerManager.GetLogger().Info().Msg("GRPC Server has been started")
 			}
-			s.loggerManager.GetLogger().Info().Msg("GRPC Server has been started")
-		}
-	}(s, &wg)
+		}(s, &wg)
+	}
 
-	wg.Add(1)
-	go func(s *Service, wGroup *sync.WaitGroup) {
-		if s.cfg.UseAPIServer {
+	if s.cfg.UseAPIServer {
+		wg.Add(1)
+		go func(s *Service, wGroup *sync.WaitGroup) {
+			defer wGroup.Done()
+
 			s.loggerManager.GetLogger().Info().Msg("API Server is starting")
 			err = s.apiServer.Run()
 			if err != nil {
 				s.GetLogger().Error().Err(err).Msgf("error on running api server")
+			} else {
+				s.loggerManager.GetLogger().Info().Msg("API Server has been started")
 			}
-			s.loggerManager.GetLogger().Info().Msg("API Server has been started")
-		}
-	}(s, &wg)
+		}(s, &wg)
+	}
 
 	<-s.ctx.Done()
 	wg.Wait()
