@@ -2,9 +2,10 @@ package configuration
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
+
+	"github.com/neonlabsorg/neon-service-framework/pkg/env"
 )
 
 type MetricsServerConfiguration struct {
@@ -17,9 +18,9 @@ type MetricsServerConfiguration struct {
 // LOAD METRICS CONFIGURATION
 func (c *ServiceConfiguration) loadMetricsServerConfiguration(serviceName string) error {
 	serviceName = strings.ToUpper(serviceName)
-	listenAddr := os.Getenv(fmt.Sprintf("NS_METRICS_%s_LISTEN_ADDRESS", serviceName))
-	listenPortString := os.Getenv(fmt.Sprintf("NS_METRICS_%s_LISTEN_PORT", serviceName))
-	intervalString := os.Getenv(fmt.Sprintf("NS_METRICS_%s_INTERVAL", serviceName))
+	listenAddr := env.Get(fmt.Sprintf("NS_METRICS_%s_LISTEN_ADDRESS", serviceName))
+	listenPortString := env.Get(fmt.Sprintf("NS_METRICS_%s_LISTEN_PORT", serviceName))
+	intervalString := env.Get(fmt.Sprintf("NS_METRICS_%s_INTERVAL", serviceName))
 
 	port, err := strconv.Atoi(listenPortString)
 	if err != nil {

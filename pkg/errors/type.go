@@ -8,6 +8,29 @@ import (
 
 type ErrorType uint
 
+func (t ErrorType) String() string {
+	switch t {
+	case Validation:
+		return "Validation"
+	case NotFound:
+		return "NotFound"
+	case AccessDenied:
+		return "AccessDenied"
+	case Unauthorized:
+		return "Unauthorized"
+	case Logical:
+		return "Logical"
+	case Temporarily:
+		return "Temporarily"
+	case Internal:
+		return "Internal"
+	case Critical:
+		return "Critical"
+	default:
+		return "no_type"
+	}
+}
+
 func (t ErrorType) New(msg string) error {
 	return Error{errorType: t, originalError: errors.New(msg)}
 }

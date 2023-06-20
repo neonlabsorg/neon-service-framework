@@ -10,8 +10,10 @@ import (
 	"syscall"
 
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/labstack/echo/v4"
+	"github.com/neonlabsorg/neon-service-framework/pkg/api"
+	"github.com/neonlabsorg/neon-service-framework/pkg/env"
 	"github.com/neonlabsorg/neon-service-framework/pkg/logger"
-	"github.com/neonlabsorg/neon-service-framework/pkg/metrics"
 	"github.com/neonlabsorg/neon-service-framework/pkg/service/configuration"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
@@ -23,24 +25,26 @@ type Service struct {
 	env             string
 	name            string
 	version         string
+	cfg             *configuration.ServiceConfiguration
 	ctx             context.Context
 	cliApp          *cli.App
 	cliContext      *cli.Context
 	loggerManager   *LoggerManager
 	solanaRpcClient *rpc.Client
 	grpcServer      *GRPCServer
+	apiServer       *ApiServer
 	handlers        []func(service *Service)
 }
 
 func CreateService(
-	cfg *configuration.Config,
+	config *configuration.Config,
 ) *Service {
-	configuration, err := configuration.NewServiceConfiguration(cfg)
+	configuration, err := configuration.NewServiceConfiguration(config)
 	if err != nil {
 		panic(err)
 	}
 
-	env := os.Getenv("NEON_SERVICE_ENV")
+	env := env.Get("NS_ENV")
 	if env == "" {
 		env = "development"
 	}
@@ -51,6 +55,7 @@ func CreateService(
 
 	s := &Service{
 		env:     env,
+		cfg:     configuration,
 		name:    configuration.Name,
 		version: Version,
 	}
@@ -60,7 +65,13 @@ func CreateService(
 	s.initLoggerManager(configuration.Logger)
 	s.initSolana()
 
-	s.initGRPCServer(configuration.GRPCServerConfig)
+	if configuration.UseGRPCServer {
+		s.initGRPCServer(configuration.GRPCServer)
+	}
+
+	if configuration.UseAPIServer {
+		s.initApiServer(configuration.ApiServer)
+	}
 
 	if !configuration.IsConsoleApp {
 		s.initMetrics(configuration.MetricsServer)
@@ -73,10 +84,6 @@ func (s *Service) Run() {
 	err := s.cliApp.Run(os.Args)
 	if err != nil {
 		panic(err.Error())
-	}
-
-	if s.grpcServer.services.Len() > 0 {
-		s.grpcServer.Run()
 	}
 }
 
@@ -94,6 +101,33 @@ func (s *Service) run(cliContext *cli.Context) (err error) {
 		}(handler, &wg)
 	}
 
+	wg.Add(1)
+	go func(s *Service, wGroup *sync.WaitGroup) {
+		if s.cfg.UseGRPCServer {
+			s.GetLogger().Info().Msg("GRPC Server is starting")
+			if s.grpcServer.services.Len() == 0 {
+				s.GetLogger().Error().Msg("grpc server is running with no services")
+			}
+			err = s.grpcServer.Run()
+			if err != nil {
+				s.GetLogger().Error().Err(err).Msgf("error on running grpc server")
+			}
+			s.loggerManager.GetLogger().Info().Msg("GRPC Server has been started")
+		}
+	}(s, &wg)
+
+	wg.Add(1)
+	go func(s *Service, wGroup *sync.WaitGroup) {
+		if s.cfg.UseAPIServer {
+			s.loggerManager.GetLogger().Info().Msg("API Server is starting")
+			err = s.apiServer.Run()
+			if err != nil {
+				s.GetLogger().Error().Err(err).Msgf("error on running api server")
+			}
+			s.loggerManager.GetLogger().Info().Msg("API Server has been started")
+		}
+	}(s, &wg)
+
 	<-s.ctx.Done()
 	wg.Wait()
 
@@ -102,12 +136,23 @@ func (s *Service) run(cliContext *cli.Context) (err error) {
 	return
 }
 
-func (s *Service) initGRPCServer(cfg *configuration.GRPCServerConfig) {
+func (s *Service) initGRPCServer(cfg *configuration.GRPCServerConfiguration) {
 	s.grpcServer = NewGRPCServer(cfg.ListenAddr)
 }
 
+func (s *Service) initApiServer(cfg *configuration.ApiServerConfiguration) {
+	extender := api.NewDefaultApiContextExtender(api.NewValidator(), s.GetLogger())
+
+	s.apiServer = NewApiServer(
+		s.ctx,
+		cfg,
+		extender,
+		s.GetLogger(),
+	)
+}
+
 func (s *Service) initSolana() {
-	solanaURL := os.Getenv("NS_SOLANA_URL")
+	solanaURL := env.Get("NS_SOLANA_URL")
 	s.solanaRpcClient = rpc.New(solanaURL)
 }
 
@@ -172,7 +217,7 @@ func (s *Service) initMetrics(cfg *configuration.MetricsServerConfiguration) {
 		return
 	}
 
-	metricsServer := metrics.NewMetricsServer(
+	metricsServer := NewMetricsServer(
 		s.GetContext(),
 		cfg.ServiceName,
 		cfg.Interval,
@@ -222,4 +267,16 @@ func (s *Service) GetSolanaRpcClient() *rpc.Client {
 
 func (s *Service) RegisterGRPCService(svc *grpc.ServiceDesc, srv interface{}) {
 	s.grpcServer.RegisterService(svc, srv)
+}
+
+func (s *Service) RegisterApiRoutes(handler func(server *echo.Echo) error) (err error) {
+	return s.apiServer.RegisterRoutes(handler)
+}
+
+func (s *Service) SetCustomExtenderForApiServer(extender api.ApiContextExtender) {
+	s.apiServer.SetCustomExtender(extender)
+}
+
+func (s *Service) UseMiddlewareForApiServer(middlware echo.MiddlewareFunc) {
+	s.apiServer.UseMiddleware(middlware)
 }
