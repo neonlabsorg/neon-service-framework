@@ -13,6 +13,7 @@ const (
 	AccessDenied
 	Unauthorized
 	Logical
+	Temporarily
 	Internal
 	Critical
 )
