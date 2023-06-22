@@ -36,6 +36,6 @@ func (c *ServiceConfiguration) loadDefaultMetricsServerConfiguration() (cfg *Met
 		Enable:        env.GetBool("NS_METRICS_ENABLE", false),
 		ListenAddress: env.Get("NS_METRICS_LISTEN_ADDRESS", "0.0.0.0"),
 		ListenPort:    env.GetInt("NS_METRICS_LISTEN_PORT", 20500),
-		Interval:      env.GetDuration("NS_METRICS_%s_INTERVAL", time.Second*5),
+		Interval:      env.GetDuration("NS_METRICS_INTERVAL", time.Second*5),
 	}
 }
