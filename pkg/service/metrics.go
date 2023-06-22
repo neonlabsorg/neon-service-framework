@@ -11,23 +11,23 @@ import (
 )
 
 type MetricsServer struct {
-	ctx               context.Context
-	serviceName       string
-	updateIntervalSec int
-	listenAddr        string
+	ctx            context.Context
+	serviceName    string
+	updateInterval time.Duration
+	listenAddr     string
 }
 
 func NewMetricsServer(
 	ctx context.Context,
 	serviceName string,
-	updateIntervalSec int,
+	updateInterval time.Duration,
 	listenAddr string,
 ) *MetricsServer {
 	return &MetricsServer{
-		ctx:               ctx,
-		serviceName:       serviceName,
-		updateIntervalSec: updateIntervalSec,
-		listenAddr:        listenAddr,
+		ctx:            ctx,
+		serviceName:    serviceName,
+		updateInterval: updateInterval,
+		listenAddr:     listenAddr,
 	}
 }
 
@@ -43,8 +43,9 @@ func (s *MetricsServer) Init() error {
 	if err != nil {
 		return err
 	}
+
 	go func() {
-		tick := time.NewTicker(time.Second * time.Duration(s.updateIntervalSec))
+		tick := time.NewTicker(s.updateInterval)
 		for {
 			select {
 			case <-s.ctx.Done():

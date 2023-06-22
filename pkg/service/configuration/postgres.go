@@ -26,22 +26,32 @@ func (c *PostgresConfiguration) BuildConnectionString() string {
 
 // LOAD POSTGRES CONFIGURATION
 func (c *ServiceConfiguration) loadPostgresStorageConfig(name string) (cfg *PostgresConfiguration, err error) {
-	postgresConfig := &PostgresConfiguration{}
+	cfg = c.loadDefaultPostgresStorageConfig()
 
 	name = strings.ToUpper(name)
 
-	postgresConfig.Hostname = env.Get(fmt.Sprintf("NS_DB_PG_%s_HOSTNAME", name))
-	postgresConfig.Port = env.GetInt(fmt.Sprintf("NS_DB_PG_%s_PORT", name), 5432)
-	postgresConfig.SSLMode = env.Get(fmt.Sprintf("NS_DB_PG_%s_SSLMODE", name))
-	postgresConfig.Username = env.Get(fmt.Sprintf("NS_DB_PG_%s_USERNAME", name))
-	postgresConfig.Password = env.Get(fmt.Sprintf("NS_DB_PG_%s_PASSWORD", name))
-	postgresConfig.Database = env.Get(fmt.Sprintf("NS_DB_PG_%s_DATABASE", name))
+	cfg.Hostname = env.Get(fmt.Sprintf("NS_DB_PG_%s_HOSTNAME", cfg.Hostname))
+	cfg.Port = env.GetInt(fmt.Sprintf("NS_DB_PG_%s_PORT", name), cfg.Port)
+	cfg.SSLMode = env.Get(fmt.Sprintf("NS_DB_PG_%s_SSLMODE", cfg.SSLMode))
+	cfg.Username = env.Get(fmt.Sprintf("NS_DB_PG_%s_USERNAME", cfg.Username))
+	cfg.Password = env.Get(fmt.Sprintf("NS_DB_PG_%s_PASSWORD", cfg.Password))
+	cfg.Database = env.Get(fmt.Sprintf("NS_DB_PG_%s_DATABASE", cfg.Database))
 
-	if postgresConfig.Database == "" || postgresConfig.Hostname == "" || postgresConfig.Username == "" {
-		return nil, errors.Critical.Newf("invalid env parameters for database '%s': %s", name, spew.Sdump(postgresConfig))
+	if cfg.Database == "" || cfg.Hostname == "" || cfg.Username == "" {
+		return nil, errors.Critical.Newf("invalid env parameters for database '%s': %s", name, spew.Sdump(cfg))
 	}
 
-	return postgresConfig, nil
+	return cfg, nil
+}
+
+func (c *ServiceConfiguration) loadDefaultPostgresStorageConfig() (cfg *PostgresConfiguration) {
+	return &PostgresConfiguration{
+		Hostname: env.Get("NS_DB_PG_HOSTNAME"),
+		Port:     env.GetInt("NS_DB_PG_PORT", 5432),
+		SSLMode:  env.Get("NS_DB_PG_SSLMODE", "disable"),
+		Username: env.Get("NS_DB_PG_USERNAME"),
+		Password: env.Get("NS_DB_PG_PASSWORD"),
+	}
 }
 
 type PostgresConfigCollection map[string]*PostgresConfiguration

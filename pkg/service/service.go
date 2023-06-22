@@ -229,7 +229,7 @@ func (s *Service) initCliApp(isConsoleApp bool) {
 }
 
 func (s *Service) initMetrics(cfg *configuration.MetricsServerConfiguration) {
-	if cfg.ListenAddress == "" || cfg.ListenPort == 0 || cfg.Interval == 0 {
+	if !cfg.Enable || cfg.ListenAddress == "" || cfg.ListenPort == 0 || cfg.Interval == 0 {
 		s.GetLogger().Info().Msg("Metrics server inicialization has been skipped")
 		return
 	}
