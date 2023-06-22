@@ -30,6 +30,7 @@ type Service struct {
 	cliApp          *cli.App
 	cliContext      *cli.Context
 	loggerManager   *LoggerManager
+	databaseManager *DatabaseManager
 	solanaRpcClient *rpc.Client
 	grpcServer      *GRPCServer
 	apiServer       *ApiServer
@@ -64,6 +65,7 @@ func CreateService(
 	s.initCliApp(configuration.IsConsoleApp)
 	s.initLoggerManager(configuration.Logger)
 	s.initSolana()
+	s.initDatabases(configuration.Storage)
 
 	if configuration.UseGRPCServer {
 		s.initGRPCServer(configuration.GRPCServer)
@@ -155,6 +157,15 @@ func (s *Service) initApiServer(cfg *configuration.ApiServerConfiguration) {
 		extender,
 		s.GetLogger(),
 	)
+}
+
+func (s *Service) initDatabases(cfg *configuration.StorageConfiguration) {
+	var err error
+	s.databaseManager, err = NewDatabaseManager(s.ctx, cfg, s.GetLogger())
+	if err != nil {
+		s.GetLogger().Error().Err(err).Msgf("error on init databases")
+		panic(err)
+	}
 }
 
 func (s *Service) initSolana() {
@@ -285,4 +296,8 @@ func (s *Service) SetCustomExtenderForApiServer(extender api.ApiContextExtender)
 
 func (s *Service) UseMiddlewareForApiServer(middlware echo.MiddlewareFunc) {
 	s.apiServer.UseMiddleware(middlware)
+}
+
+func (s *Service) GetDatabaseManager() *DatabaseManager {
+	return s.databaseManager
 }
