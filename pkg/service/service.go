@@ -251,18 +251,34 @@ func (s *Service) GetSolanaRpcClient() *rpc.Client {
 }
 
 func (s *Service) RegisterGRPCService(svc *grpc.ServiceDesc, srv interface{}) {
+	if s.grpcServer == nil {
+		s.GetLogger().Error().Msg("the grpc server is not initialized")
+		return
+	}
 	s.grpcServer.RegisterService(svc, srv)
 }
 
 func (s *Service) RegisterApiRoutes(handler func(server *echo.Echo) error) (err error) {
+	if s.apiServer == nil {
+		s.GetLogger().Error().Msg("the api server is not initialized")
+		return
+	}
 	return s.apiServer.RegisterRoutes(handler)
 }
 
 func (s *Service) SetCustomExtenderForApiServer(extender api.ApiContextExtender) {
+	if s.apiServer == nil {
+		s.GetLogger().Error().Msg("the api server is not initialized")
+		return
+	}
 	s.apiServer.SetCustomExtender(extender)
 }
 
 func (s *Service) UseMiddlewareForApiServer(middlware echo.MiddlewareFunc) {
+	if s.apiServer == nil {
+		s.GetLogger().Error().Msg("the api server is not initialized")
+		return
+	}
 	s.apiServer.UseMiddleware(middlware)
 }
 
