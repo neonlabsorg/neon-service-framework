@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/neonlabsorg/neon-service-framework/pkg/api"
 	"github.com/neonlabsorg/neon-service-framework/pkg/env"
+	"github.com/neonlabsorg/neon-service-framework/pkg/errors"
 	"github.com/neonlabsorg/neon-service-framework/pkg/logger"
 	"github.com/neonlabsorg/neon-service-framework/pkg/service/configuration"
 	"github.com/urfave/cli/v2"
@@ -101,39 +102,6 @@ func (s *Service) run(cliContext *cli.Context) (err error) {
 			defer wGroup.Done()
 			h(s)
 		}(handler, &wg)
-	}
-
-	if s.cfg.UseGRPCServer {
-		wg.Add(1)
-		go func(s *Service, wGroup *sync.WaitGroup) {
-			defer wGroup.Done()
-
-			s.GetLogger().Info().Msg("GRPC Server is starting")
-			if s.grpcServer.services.Len() == 0 {
-				s.GetLogger().Error().Msg("grpc server is running with no services")
-			}
-			err = s.grpcServer.Run()
-			if err != nil {
-				s.GetLogger().Error().Err(err).Msgf("error on running grpc server")
-			} else {
-				s.loggerManager.GetLogger().Info().Msg("GRPC Server has been started")
-			}
-		}(s, &wg)
-	}
-
-	if s.cfg.UseAPIServer {
-		wg.Add(1)
-		go func(s *Service, wGroup *sync.WaitGroup) {
-			defer wGroup.Done()
-
-			s.loggerManager.GetLogger().Info().Msg("API Server is starting")
-			err = s.apiServer.Run()
-			if err != nil {
-				s.GetLogger().Error().Err(err).Msgf("error on running api server")
-			} else {
-				s.loggerManager.GetLogger().Info().Msg("API Server has been started")
-			}
-		}(s, &wg)
 	}
 
 	<-s.ctx.Done()
@@ -300,4 +268,54 @@ func (s *Service) UseMiddlewareForApiServer(middlware echo.MiddlewareFunc) {
 
 func (s *Service) GetDatabaseManager() *DatabaseManager {
 	return s.databaseManager
+}
+
+func (s *Service) RunApiServer() (err error) {
+	if s.apiServer == nil {
+		s.GetLogger().Error().Msg("the api server is not initialized")
+		return errors.Critical.New("the api server is not initialized")
+	}
+
+	if !s.cfg.UseAPIServer {
+		s.GetLogger().Error().Msg("the api server is not activated")
+		return errors.Critical.New("the api server is not activated")
+	}
+
+	s.loggerManager.GetLogger().Info().Msg("API Server is starting")
+	err = s.apiServer.Run()
+	if err != nil {
+		s.GetLogger().Error().Err(err).Msgf("error on running api server")
+		return err
+	}
+
+	s.loggerManager.GetLogger().Info().Msg("API Server has been started")
+
+	return nil
+}
+
+func (s *Service) RunGRPCServer() (err error) {
+	if s.grpcServer == nil {
+		s.GetLogger().Error().Msg("the grpc server is not initialized")
+		return errors.Critical.New("the grpc server is not initialized")
+	}
+
+	if !s.cfg.UseGRPCServer {
+		s.GetLogger().Error().Msg("the grpc server is not activated")
+		return errors.Critical.New("the grpc server is not activated")
+	}
+
+	s.GetLogger().Info().Msg("GRPC Server is starting")
+	if s.grpcServer.services.Len() == 0 {
+		s.GetLogger().Error().Msg("grpc server is running with no services")
+	}
+
+	err = s.grpcServer.Run()
+	if err != nil {
+		s.GetLogger().Error().Err(err).Msgf("error on running grpc server")
+		return err
+	}
+
+	s.loggerManager.GetLogger().Info().Msg("GRPC Server has been started")
+
+	return nil
 }
