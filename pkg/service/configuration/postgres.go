@@ -30,12 +30,12 @@ func (c *ServiceConfiguration) loadPostgresStorageConfig(name string) (cfg *Post
 
 	name = strings.ToUpper(name)
 
-	cfg.Hostname = env.Get(fmt.Sprintf("NS_DB_PG_%s_HOSTNAME", cfg.Hostname))
+	cfg.Hostname = env.Get(fmt.Sprintf("NS_DB_PG_%s_HOSTNAME", name), cfg.Hostname)
 	cfg.Port = env.GetInt(fmt.Sprintf("NS_DB_PG_%s_PORT", name), cfg.Port)
-	cfg.SSLMode = env.Get(fmt.Sprintf("NS_DB_PG_%s_SSLMODE", cfg.SSLMode))
-	cfg.Username = env.Get(fmt.Sprintf("NS_DB_PG_%s_USERNAME", cfg.Username))
-	cfg.Password = env.Get(fmt.Sprintf("NS_DB_PG_%s_PASSWORD", cfg.Password))
-	cfg.Database = env.Get(fmt.Sprintf("NS_DB_PG_%s_DATABASE", cfg.Database))
+	cfg.SSLMode = env.Get(fmt.Sprintf("NS_DB_PG_%s_SSLMODE", name), cfg.SSLMode)
+	cfg.Username = env.Get(fmt.Sprintf("NS_DB_PG_%s_USERNAME", name), cfg.Username)
+	cfg.Password = env.Get(fmt.Sprintf("NS_DB_PG_%s_PASSWORD", name), cfg.Password)
+	cfg.Database = env.Get(fmt.Sprintf("NS_DB_PG_%s_DATABASE", name), cfg.Database)
 
 	if cfg.Database == "" || cfg.Hostname == "" || cfg.Username == "" {
 		return nil, errors.Critical.Newf("invalid env parameters for database '%s': %s", name, spew.Sdump(cfg))
