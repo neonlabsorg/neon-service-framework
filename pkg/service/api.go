@@ -69,6 +69,7 @@ func (s *ApiServer) UseMiddleware(middlware echo.MiddlewareFunc) {
 
 func (s *ApiServer) SetCustomExtender(extender api.ApiContextExtender) {
 	s.extender = extender
+	s.server.Use(s.extender.ExtendDefaultApiContext)
 }
 
 func (s *ApiServer) registerExtender() {
