@@ -70,22 +70,3 @@ func (c *ServiceConfiguration) loadCommonClickhouseStorageConfig() (cfg *Clickho
 
 	return config, nil
 }
-
-type ClickhouseConfigCollection map[string]*ClickhouseConfiguration
-
-func (c *ClickhouseConfigCollection) init() {
-	if c == nil {
-		*c = make(map[string]*ClickhouseConfiguration)
-	}
-}
-
-func (c ClickhouseConfigCollection) Add(name string, config *ClickhouseConfiguration) {
-	c.init()
-	c[name] = config
-}
-
-func (c ClickhouseConfigCollection) Get(name string) (config *ClickhouseConfiguration, ok bool) {
-	c.init()
-	config, ok = c[name]
-	return config, ok
-}

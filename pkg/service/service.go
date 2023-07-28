@@ -10,7 +10,6 @@ import (
 	"syscall"
 
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/labstack/echo/v4"
 	"github.com/neonlabsorg/neon-service-framework/pkg/api"
 	"github.com/neonlabsorg/neon-service-framework/pkg/env"
 	"github.com/neonlabsorg/neon-service-framework/pkg/errors"
@@ -23,19 +22,19 @@ import (
 var Version string
 
 type Service struct {
-	env             string
-	name            string
-	version         string
-	cfg             *configuration.ServiceConfiguration
-	ctx             context.Context
-	cliApp          *cli.App
-	cliContext      *cli.Context
-	loggerManager   *LoggerManager
-	databaseManager *DatabaseManager
-	solanaRpcClient *rpc.Client
-	grpcServer      *GRPCServer
-	apiServer       *ApiServer
-	handlers        []func(service *Service)
+	env              string
+	name             string
+	version          string
+	cfg              *configuration.ServiceConfiguration
+	ctx              context.Context
+	cliApp           *cli.App
+	cliContext       *cli.Context
+	loggerManager    *LoggerManager
+	databaseManager  *DatabaseManager
+	solanaRpcClient  *rpc.Client
+	grpcServer       *GRPCServer
+	apiServerManager *ApiServerManager
+	handlers         []func(service *Service)
 }
 
 func CreateService(
@@ -72,8 +71,8 @@ func CreateService(
 		s.initGRPCServer(configuration.GRPCServer)
 	}
 
-	if configuration.UseAPIServer {
-		s.initApiServer(configuration.ApiServer)
+	if len(configuration.ApiServers.Servers) > 0 {
+		s.initApiServers(configuration.ApiServers)
 	}
 
 	if !configuration.IsConsoleApp {
@@ -116,15 +115,21 @@ func (s *Service) initGRPCServer(cfg *configuration.GRPCServerConfiguration) {
 	s.grpcServer = NewGRPCServer(cfg.ListenAddr)
 }
 
-func (s *Service) initApiServer(cfg *configuration.ApiServerConfiguration) {
+func (s *Service) initApiServers(cfg *configuration.ApiServersConfiguration) {
 	extender := api.NewDefaultApiContextExtender(api.NewValidator(), s.GetLogger())
 
-	s.apiServer = NewApiServer(
-		s.ctx,
+	s.apiServerManager = NewApiServerManager(
 		cfg,
-		extender,
+		s.GetContext(),
 		s.GetLogger(),
+		extender,
 	)
+
+	err := s.apiServerManager.Init()
+	if err != nil {
+		s.GetLogger().Error().Err(err).Msg("can't initialize api server manager")
+		panic(err)
+	}
 }
 
 func (s *Service) initDatabases(cfg *configuration.StorageConfiguration) {
@@ -254,43 +259,12 @@ func (s *Service) RegisterGRPCService(svc *grpc.ServiceDesc, srv interface{}) {
 	s.grpcServer.RegisterService(svc, srv)
 }
 
-func (s *Service) RegisterApiRoutes(handler func(server *echo.Echo) error) (err error) {
-	return s.apiServer.RegisterRoutes(handler)
-}
-
-func (s *Service) SetCustomExtenderForApiServer(extender api.ApiContextExtender) {
-	s.apiServer.SetCustomExtender(extender)
-}
-
-func (s *Service) UseMiddlewareForApiServer(middlware echo.MiddlewareFunc) {
-	s.apiServer.UseMiddleware(middlware)
-}
-
 func (s *Service) GetDatabaseManager() *DatabaseManager {
 	return s.databaseManager
 }
 
-func (s *Service) RunApiServer() (err error) {
-	if s.apiServer == nil {
-		s.GetLogger().Error().Msg("the api server is not initialized")
-		return errors.Critical.New("the api server is not initialized")
-	}
-
-	if !s.cfg.UseAPIServer {
-		s.GetLogger().Error().Msg("the api server is not activated")
-		return errors.Critical.New("the api server is not activated")
-	}
-
-	s.loggerManager.GetLogger().Info().Msg("API Server is starting")
-	err = s.apiServer.Run()
-	if err != nil {
-		s.GetLogger().Error().Err(err).Msgf("error on running api server")
-		return err
-	}
-
-	s.loggerManager.GetLogger().Info().Msg("API Server has been started")
-
-	return nil
+func (s *Service) GetApiServerManager() *ApiServerManager {
+	return s.apiServerManager
 }
 
 func (s *Service) RunGRPCServer() (err error) {
