@@ -53,22 +53,3 @@ func (c *ServiceConfiguration) loadDefaultPostgresStorageConfig() (cfg *Postgres
 		Password: env.Get("NS_DB_PG_PASSWORD"),
 	}
 }
-
-type PostgresConfigCollection map[string]*PostgresConfiguration
-
-func (c *PostgresConfigCollection) init() {
-	if c == nil {
-		*c = make(map[string]*PostgresConfiguration)
-	}
-}
-
-func (c PostgresConfigCollection) Add(name string, config *PostgresConfiguration) {
-	c.init()
-	c[name] = config
-}
-
-func (c PostgresConfigCollection) Get(name string) (config *PostgresConfiguration, ok bool) {
-	c.init()
-	config, ok = c[name]
-	return config, ok
-}
