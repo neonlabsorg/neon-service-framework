@@ -19,6 +19,12 @@ func (c BasicMapCollection[T]) Get(name string) (srv T, ok bool) {
 	return srv, ok
 }
 
+func (c BasicMapCollection[T]) Exists(name string) (ok bool) {
+	c.init()
+	_, ok = c[name]
+	return ok
+}
+
 func (c BasicMapCollection[T]) MustGet(name string) (srv T) {
 	c.init()
 	srv, ok := c[name]
@@ -33,4 +39,17 @@ func (c BasicMapCollection[T]) MustGet(name string) (srv T) {
 func (c BasicMapCollection[T]) Remove(name string) {
 	c.init()
 	delete(c, name)
+}
+
+func (c BasicMapCollection[T]) Iter(cb func(item T) error) (err error) {
+	c.init()
+
+	for _, item := range c {
+		err = cb(item)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

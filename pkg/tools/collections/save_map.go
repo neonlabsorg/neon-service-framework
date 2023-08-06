@@ -45,6 +45,15 @@ func (c *SafeMapCollection[T]) Get(name string) (item T, ok bool) {
 	return item, ok
 }
 
+func (c *SafeMapCollection[T]) Exists(name string) (ok bool) {
+	c.lock()
+	defer c.unlock()
+
+	c.init()
+	_, ok = c.collection[name]
+	return ok
+}
+
 func (c *SafeMapCollection[T]) MustGet(name string) (item T) {
 	c.lock()
 	defer c.unlock()
