@@ -23,7 +23,8 @@ func NewServiceConfiguration(cfg *Config) (serviceConfiguration *ServiceConfigur
 		UseGRPCServer: cfg.UseGRPCServer,
 		UseAPIServer:  cfg.UseAPIServer,
 		Storage: &StorageConfiguration{
-			Postgres: make(map[string]*PostgresConfiguration),
+			Postgres:  make(map[string]*PostgresConfiguration),
+			Clichouse: make(map[string]*ClickhouseConfiguration),
 		},
 	}
 
