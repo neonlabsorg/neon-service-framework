@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/neonlabsorg/neon-service-framework/pkg/env"
 	"github.com/neonlabsorg/neon-service-framework/pkg/logger"
+	"github.com/neonlabsorg/neon-service-framework/pkg/service/configuration"
 )
 
 type PrometheusAdapter struct {
-	cfg        *PrometheusAdapterConfig
+	cfg        *configuration.PrometheusAdapterConfig
 	clientName string
 	sendURL    string
 	httpClient *http.Client
@@ -23,7 +23,7 @@ type PrometheusAdapter struct {
 }
 
 func NewPrometheusAdapter(
-	cfg *PrometheusAdapterConfig,
+	cfg *configuration.PrometheusAdapterConfig,
 	context *Context,
 	log logger.Logger,
 ) *PrometheusAdapter {
@@ -146,26 +146,4 @@ func (s *PrometheusAdapter) buildRequestBodyJSON(alert Alert) ([]byte, error) {
 	}
 
 	return reqBodyJSON, nil
-}
-
-type PrometheusAdapterConfig struct {
-	URL      string
-	Attempts int
-	Interval time.Duration
-	IsDemo   bool
-}
-
-func NewPrometheusAdapterConfigFromEnv() (cfg *PrometheusAdapterConfig, err error) {
-	cfg = &PrometheusAdapterConfig{
-		URL:      env.Get("NS_ALERTS_PROMETHEUS_ALERT_MANAGER_URL"),
-		Attempts: env.GetInt("NS_ALERTS_PROMETHEUS_ATTEMPTS", 5),
-		Interval: env.GetDuration("NS_ALERTS_PROMETHEUS_INTERVAL", time.Duration(time.Second)),
-		IsDemo:   env.GetBool("NS_ALERTS_PROMETHEUS_DEMO_MODE", false),
-	}
-
-	if cfg.URL == "" {
-		return nil, ErrPrometheusAlertManagerUrlIsEmpty
-	}
-
-	return cfg, nil
 }

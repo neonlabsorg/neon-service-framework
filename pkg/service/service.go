@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/neonlabsorg/neon-service-framework/pkg/alerts"
 	"github.com/neonlabsorg/neon-service-framework/pkg/api"
 	"github.com/neonlabsorg/neon-service-framework/pkg/env"
 	"github.com/neonlabsorg/neon-service-framework/pkg/errors"
@@ -34,6 +35,7 @@ type Service struct {
 	solanaRpcClient  *rpc.Client
 	grpcServer       *GRPCServer
 	apiServerManager *ApiServerManager
+	alertDispatcher  *alerts.Dispatcher
 	handlers         []func(service *Service)
 }
 
@@ -66,6 +68,7 @@ func CreateService(
 	s.initLoggerManager(configuration.Logger)
 	s.initSolana()
 	s.initDatabases(configuration.Storage)
+	s.initAlertDispatcher(configuration.Alerts)
 
 	if configuration.UseGRPCServer {
 		s.initGRPCServer(configuration.GRPCServer)
@@ -129,6 +132,65 @@ func (s *Service) initApiServers(cfg *configuration.ApiServersConfiguration) {
 	if err != nil {
 		s.GetLogger().Error().Err(err).Msg("can't initialize api server manager")
 		panic(err)
+	}
+}
+
+func (s *Service) initAlertDispatcher(cfg *configuration.AlertsConfiguration) {
+	alertsContext := alerts.NewContext("project", s.name, "")
+
+	var mainAdapter alerts.Adapter
+	var reserveAdapter alerts.Adapter
+
+	switch cfg.MainAdapter {
+	case "prometheus":
+		if cfg.Prometheus.URL == "" {
+			break
+		}
+		mainAdapter = alerts.NewPrometheusAdapter(
+			cfg.Prometheus,
+			alertsContext,
+			s.GetLogger(),
+		)
+	case "console":
+		mainAdapter = alerts.NewConsoleAdapter(s.GetLogger())
+	case "":
+		mainAdapter = nil
+	default:
+		err := ErrUnregisteredAlertAdapter
+		s.GetLogger().Error().Err(err).Msg("can't initialize main alerts adapter")
+		panic(err)
+	}
+
+	switch cfg.ReserveAdapter {
+	case "prometheus":
+		reserveAdapter = alerts.NewPrometheusAdapter(
+			cfg.Prometheus,
+			alertsContext,
+			s.GetLogger(),
+		)
+	case "console":
+		reserveAdapter = alerts.NewConsoleAdapter(s.GetLogger())
+	case "":
+		reserveAdapter = nil
+	default:
+		err := ErrUnregisteredAlertAdapter
+		s.GetLogger().Error().Err(err).Msg("can't initialize reserve alerts adapter")
+		panic(err)
+	}
+
+	if mainAdapter == nil {
+		mainAdapter = reserveAdapter
+		reserveAdapter = nil
+	}
+
+	if mainAdapter == nil {
+		mainAdapter = alerts.NewConsoleAdapter(s.GetLogger())
+	}
+
+	s.alertDispatcher = alerts.NewAlertDispatcher(mainAdapter, s.GetLogger())
+
+	if reserveAdapter != nil {
+		s.alertDispatcher.UseReservedAdapter(reserveAdapter)
 	}
 }
 
@@ -261,6 +323,10 @@ func (s *Service) RegisterGRPCService(svc *grpc.ServiceDesc, srv interface{}) {
 
 func (s *Service) GetDatabaseManager() *DatabaseManager {
 	return s.databaseManager
+}
+
+func (s *Service) GetAlertsDispatcher() *alerts.Dispatcher {
+	return s.alertDispatcher
 }
 
 func (s *Service) GetApiServerManager() *ApiServerManager {

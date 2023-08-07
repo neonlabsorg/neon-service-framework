@@ -12,6 +12,7 @@ type ServiceConfiguration struct {
 	MetricsServer      *MetricsServerConfiguration
 	GRPCServer         *GRPCServerConfiguration
 	ApiServers         *ApiServersConfiguration
+	Alerts             *AlertsConfiguration
 }
 
 // INIT CONFIGURATION
@@ -40,6 +41,10 @@ func NewServiceConfiguration(cfg *Config) (serviceConfiguration *ServiceConfigur
 	}
 
 	if err = serviceConfiguration.loadMetricsServerConfiguration(cfg.Name); err != nil {
+		return nil, err
+	}
+
+	if err = serviceConfiguration.loadAlertsConfiguration(); err != nil {
 		return nil, err
 	}
 
