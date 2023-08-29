@@ -122,3 +122,13 @@ func GetType(err error) ErrorType {
 
 	return NoType
 }
+
+func Is(err error, target Error) bool {
+	if customErr, ok := err.(Error); ok {
+		if customErr.originalError == target.originalError {
+			return true
+		}
+	}
+
+	return false
+}
