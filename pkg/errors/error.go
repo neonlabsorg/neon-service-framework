@@ -59,27 +59,27 @@ func (e Error) Cause() error {
 	return errors.Cause(e)
 }
 
-func New(msg string) error {
+func New(msg string) Error {
 	return Error{errorType: NoType, originalError: errors.New(msg)}
 }
 
-func Newf(msg string, args ...interface{}) error {
+func Newf(msg string, args ...interface{}) Error {
 	return Error{errorType: NoType, originalError: errors.New(fmt.Sprintf(msg, args...))}
 }
 
-func NewWithCode(code ErrorCode, msg string) error {
+func NewWithCode(code ErrorCode, msg string) Error {
 	return Error{code: code, errorType: NoType, originalError: errors.New(msg)}
 }
 
-func NewfWithCode(code ErrorCode, msg string, args ...interface{}) error {
+func NewfWithCode(code ErrorCode, msg string, args ...interface{}) Error {
 	return Error{code: code, errorType: NoType, originalError: errors.New(fmt.Sprintf(msg, args...))}
 }
 
-func Wrap(err error, msg string) error {
+func Wrap(err error, msg string) Error {
 	return Wrapf(err, msg)
 }
 
-func WrapWithCode(code ErrorCode, err error, msg string) error {
+func WrapWithCode(code ErrorCode, err error, msg string) Error {
 	return WrapfWithCode(code, err, msg)
 }
 
@@ -87,7 +87,7 @@ func Cause(err error) error {
 	return errors.Cause(err)
 }
 
-func Wrapf(err error, msg string, args ...interface{}) error {
+func Wrapf(err error, msg string, args ...interface{}) Error {
 	wrappedError := errors.Wrapf(err, msg, args...)
 	if customErr, ok := err.(Error); ok {
 		return Error{
@@ -101,7 +101,7 @@ func Wrapf(err error, msg string, args ...interface{}) error {
 	return Error{errorType: NoType, originalError: wrappedError}
 }
 
-func WrapfWithCode(code ErrorCode, err error, msg string, args ...interface{}) error {
+func WrapfWithCode(code ErrorCode, err error, msg string, args ...interface{}) Error {
 	wrappedError := errors.Wrapf(err, msg, args...)
 	if customErr, ok := err.(Error); ok {
 		return Error{
