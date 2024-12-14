@@ -10,44 +10,26 @@ import (
 	"github.com/neonlabsorg/neon-service-framework/pkg/errors"
 	"github.com/neonlabsorg/neon-service-framework/pkg/logger"
 	"github.com/neonlabsorg/neon-service-framework/pkg/service/configuration"
+	"github.com/neonlabsorg/neon-service-framework/pkg/tools/collections"
 )
-
-type ClickhouseCollection map[string]driver.Conn
-
-func (p *ClickhouseCollection) init() {
-	if p == nil {
-		*p = make(map[string]driver.Conn)
-	}
-}
-
-func (p ClickhouseCollection) Add(name string, conn driver.Conn) {
-	p.init()
-	p[name] = conn
-}
-
-func (p ClickhouseCollection) Get(name string) (conn driver.Conn, ok bool) {
-	p.init()
-	conn, ok = p[name]
-	return conn, ok
-}
 
 type ClickhouseManager struct {
 	ctx     context.Context
 	log     logger.Logger
-	configs configuration.ClickhouseConfigCollection
-	conns   ClickhouseCollection
+	configs collections.BasicMapCollection[*configuration.ClickhouseConfiguration]
+	conns   collections.BasicMapCollection[driver.Conn]
 }
 
 func NewClickhouseManager(
 	ctx context.Context,
 	log logger.Logger,
-	configs configuration.ClickhouseConfigCollection,
+	configs collections.BasicMapCollection[*configuration.ClickhouseConfiguration],
 ) *ClickhouseManager {
 	return &ClickhouseManager{
 		ctx:     ctx,
 		log:     log,
 		configs: configs,
-		conns:   make(ClickhouseCollection),
+		conns:   make(collections.BasicMapCollection[driver.Conn]),
 	}
 }
 
@@ -57,7 +39,7 @@ func (m *ClickhouseManager) InitConnections() (err error) {
 		if err != nil {
 			return err
 		}
-		m.conns.Add(name, conn)
+		m.conns.Set(name, conn)
 	}
 
 	return nil

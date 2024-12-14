@@ -8,44 +8,26 @@ import (
 	"github.com/neonlabsorg/neon-service-framework/pkg/errors"
 	"github.com/neonlabsorg/neon-service-framework/pkg/logger"
 	"github.com/neonlabsorg/neon-service-framework/pkg/service/configuration"
+	"github.com/neonlabsorg/neon-service-framework/pkg/tools/collections"
 )
-
-type PostgresPoolCollection map[string]*pgxpool.Pool
-
-func (p *PostgresPoolCollection) init() {
-	if p == nil {
-		*p = make(map[string]*pgxpool.Pool)
-	}
-}
-
-func (p PostgresPoolCollection) Add(name string, pool *pgxpool.Pool) {
-	p.init()
-	p[name] = pool
-}
-
-func (p PostgresPoolCollection) Get(name string) (pool *pgxpool.Pool, ok bool) {
-	p.init()
-	pool, ok = p[name]
-	return pool, ok
-}
 
 type PostgresManager struct {
 	ctx     context.Context
 	log     logger.Logger
-	configs configuration.PostgresConfigCollection
-	pools   PostgresPoolCollection
+	configs collections.BasicMapCollection[*configuration.PostgresConfiguration]
+	pools   collections.BasicMapCollection[*pgxpool.Pool]
 }
 
 func NewPostgresManager(
 	ctx context.Context,
 	log logger.Logger,
-	configs configuration.PostgresConfigCollection,
+	configs collections.BasicMapCollection[*configuration.PostgresConfiguration],
 ) *PostgresManager {
 	return &PostgresManager{
 		ctx:     ctx,
 		log:     log,
 		configs: configs,
-		pools:   make(PostgresPoolCollection),
+		pools:   make(collections.BasicMapCollection[*pgxpool.Pool]),
 	}
 }
 
@@ -55,7 +37,7 @@ func (m *PostgresManager) InitConnectionPools() (err error) {
 		if err != nil {
 			return err
 		}
-		m.pools.Add(name, pool)
+		m.pools.Set(name, pool)
 	}
 
 	return nil
