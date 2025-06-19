@@ -15,7 +15,7 @@ jobs:
     runs-on: ["gha-runner-scale-set"]
     steps:
     - uses: actions/checkout@v3
-    - run: sudo apt-get update && sudo apt-get install -y apt-get install build-essential
+    - run: sudo apt-get update && sudo apt-get install -y build-essential
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
