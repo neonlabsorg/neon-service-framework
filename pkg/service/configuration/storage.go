@@ -1,9 +1,11 @@
 package configuration
 
+import "github.com/neonlabsorg/neon-service-framework/pkg/tools/collections"
+
 // DATABASES
 type StorageConfiguration struct {
-	Postgres  PostgresConfigCollection
-	Clichouse ClickhouseConfigCollection
+	Postgres  collections.BasicMapCollection[*PostgresConfiguration]
+	Clichouse collections.BasicMapCollection[*ClickhouseConfiguration]
 }
 
 func (c *ServiceConfiguration) loadStorageConfigurations(storageList *ConfigStorageList) (err error) {
@@ -28,7 +30,7 @@ func (c *ServiceConfiguration) loadPostgresStorageConfigs(list []string) (err er
 		if err != nil {
 			return err
 		}
-		c.Storage.Postgres.Add(db, postgresConfig)
+		c.Storage.Postgres.Set(db, postgresConfig)
 	}
 
 	return nil
@@ -40,7 +42,7 @@ func (c *ServiceConfiguration) loadClickhouseStorageConfigs(list []string) (err 
 		if err != nil {
 			return err
 		}
-		c.Storage.Clichouse.Add(db, clickhouseConfig)
+		c.Storage.Clichouse.Set(db, clickhouseConfig)
 	}
 
 	return nil

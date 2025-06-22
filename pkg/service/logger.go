@@ -4,15 +4,16 @@ import (
 	"fmt"
 
 	"github.com/neonlabsorg/neon-service-framework/pkg/logger"
+	"github.com/neonlabsorg/neon-service-framework/pkg/tools/collections"
 )
 
 type LoggerManager struct {
-	loggers map[string]logger.Logger
+	loggers collections.BasicMapCollection[logger.Logger]
 }
 
 func NewLoggerManager(log logger.Logger) *LoggerManager {
 	loggerManager := &LoggerManager{
-		loggers: make(map[string]logger.Logger),
+		loggers: make(collections.BasicMapCollection[logger.Logger]),
 	}
 	loggerManager.setDefaultLogger(log)
 
@@ -20,15 +21,15 @@ func NewLoggerManager(log logger.Logger) *LoggerManager {
 }
 
 func (l *LoggerManager) setDefaultLogger(logger logger.Logger) {
-	l.loggers["default"] = logger
+	l.loggers.Set("default", logger)
 }
 
 func (l *LoggerManager) SetLogger(name string, logger logger.Logger) {
-	l.loggers[name] = logger
+	l.loggers.Set(name, logger)
 }
 
 func (l *LoggerManager) GetLogger() logger.Logger {
-	log, ok := l.loggers["default"]
+	log, ok := l.loggers.Get("default")
 
 	if !ok {
 		panic("default logger not found")
@@ -38,7 +39,7 @@ func (l *LoggerManager) GetLogger() logger.Logger {
 }
 
 func (l *LoggerManager) GetLoggerByName(name string) logger.Logger {
-	log, ok := l.loggers[name]
+	log, ok := l.loggers.Get(name)
 
 	if !ok {
 		panic(fmt.Sprintf("logger with name %s not found", name))

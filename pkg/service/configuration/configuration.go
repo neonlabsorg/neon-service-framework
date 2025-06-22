@@ -2,26 +2,30 @@ package configuration
 
 // SERVICE CONFIGURATION
 type ServiceConfiguration struct {
-	Name          string
-	IsConsoleApp  bool
-	IsUnitedApp   bool
-	UseGRPCServer bool
-	UseAPIServer  bool
-	Logger        *LoggerConfiguration
-	Storage       *StorageConfiguration
-	MetricsServer *MetricsServerConfiguration
-	GRPCServer    *GRPCServerConfiguration
-	ApiServer     *ApiServerConfiguration
+	Name               string
+	IsConsoleApp       bool
+	IsUnitedApp        bool
+	UseGRPCServer      bool
+	UseUnitedAPIServer bool
+	Logger             *LoggerConfiguration
+	Storage            *StorageConfiguration
+	MetricsServer      *MetricsServerConfiguration
+	GRPCServer         *GRPCServerConfiguration
+	ApiServers         *ApiServersConfiguration
 }
 
 // INIT CONFIGURATION
 func NewServiceConfiguration(cfg *Config) (serviceConfiguration *ServiceConfiguration, err error) {
+	if cfg.ApiServers == nil {
+		cfg.ApiServers = &ApiServersConfig{}
+	}
+
 	serviceConfiguration = &ServiceConfiguration{
-		Name:          cfg.Name,
-		IsConsoleApp:  cfg.IsConsoleApp,
-		IsUnitedApp:   cfg.IsUnitedApp,
-		UseGRPCServer: cfg.UseGRPCServer,
-		UseAPIServer:  cfg.UseAPIServer,
+		Name:               cfg.Name,
+		IsConsoleApp:       cfg.IsConsoleApp,
+		IsUnitedApp:        cfg.IsUnitedApp,
+		UseGRPCServer:      cfg.UseGRPCServer,
+		UseUnitedAPIServer: cfg.UseUnitedAPIServer,
 		Storage: &StorageConfiguration{
 			Postgres: make(map[string]*PostgresConfiguration),
 		},
@@ -43,7 +47,7 @@ func NewServiceConfiguration(cfg *Config) (serviceConfiguration *ServiceConfigur
 		return nil, err
 	}
 
-	if err = serviceConfiguration.loadApiServerConfiguration(); err != nil {
+	if err = serviceConfiguration.loadApiServersConfiguration(cfg.UseUnitedAPIServer, cfg.ApiServers.Names); err != nil {
 		return nil, err
 	}
 

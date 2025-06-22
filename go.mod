@@ -7,7 +7,10 @@ require (
 	github.com/stretchr/testify v1.8.4 // indirect
 )
 
-require github.com/labstack/echo/v4 v4.10.2
+require (
+	github.com/labstack/echo/v4 v4.10.2
+	gopkg.in/go-playground/validator.v9 v9.31.0
+)
 
 require (
 	github.com/ClickHouse/ch-go v0.52.1 // indirect
@@ -29,7 +32,7 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	go.opentelemetry.io/otel v1.13.0 // indirect
 	go.opentelemetry.io/otel/trace v1.13.0 // indirect
-	gopkg.in/go-playground/validator.v9 v9.31.0 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 )
 
 require (
